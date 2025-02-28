@@ -4,9 +4,13 @@ import os
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 import numpy as np
-
 from datetime import datetime
 import folder_paths
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class WebhookImage:
     def __init__(self):
@@ -53,12 +57,20 @@ class WebhookImage:
         handles sending text message to the webhook
         
         Args:
-            notification_text (str): 
+            webhook_url (str): The webhook URL.
+            notification_text (str): The notification text.
+            json_format (str): The JSON format for the message.
+            timeout (float): The request timeout.
+            verify_ssl (bool): Whether to verify SSL certificates.
         """
         payload = json_format.replace("<notification_text>", notification_text)
         payload = json.loads(payload)
-        res = requests.post( webhook_url, json=payload, timeout=timeout, verify=verify_ssl)
-        res.raise_for_status()
+        try:
+            res = requests.post(webhook_url, json=payload, timeout=timeout, verify=verify_ssl)
+            res.raise_for_status()
+        except requests.RequestException as e:
+            logger.error(f"Failed to send text message: {e}")
+            raise
 
     def hookImage(self, images, webhook_url, notification_text, json_format, timeout, verify_ssl, negative_text_opt=None, positive_text_opt=None, extra_pnginfo=None, prompt=None, safe_prompt="disable", image_preview="disable", send_notification="disable" ):
         counter = 1
@@ -103,18 +115,15 @@ class WebhookImage:
             
                     res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
                     res.raise_for_status()
-                    
-                    if res.status_code == 200:
-                        print("Image posted successfully!")
-                    else:
-                        print(f"Failed to post image. Status code: {res.status_code}")
+                    logger.info("Image posted successfully!")
                    
             except OSError as e:
-                    print(f'An error occurred while sending: {e}')
+                logger.error(f"An error occurred while sending: {e}")
             else:
                 if send_notification == 'enable':
                     WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
 
         if image_preview == 'disabled':
             results = list()
+            
         return { 'ui': { 'images': results } }
