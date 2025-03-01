@@ -36,6 +36,7 @@ class WebhookImage:
                 "notification_text": ('STRING', {'default': 'Your image is ready.'}),
                 "json_format": ('STRING', {'default': '{"text": "<notification_text>"}'}),
                 "send_notification": (["enable", "disable"], {"default": "disable"}),
+                "send_image": (["enable", "disable"], {"default": "disable"}),
                 "timeout": ('FLOAT', {'default': 3, 'min': 0, 'max': 60}),
                 'image_preview': (['disabled', 'enabled'], {'default': 'enabled'}),
             },
@@ -72,7 +73,22 @@ class WebhookImage:
             logger.error(f"Failed to send text message: {e}")
             raise
 
-    def hookImage(self, images, webhook_url, notification_text, json_format, timeout, verify_ssl, negative_text_opt=None, positive_text_opt=None, extra_pnginfo=None, prompt=None, safe_prompt="disable", image_preview="disable", send_notification="disable" ):
+    def hookImage(self, 
+                images, 
+                webhook_url, 
+                notification_text, 
+                json_format, 
+                timeout, 
+                verify_ssl, 
+                negative_text_opt=None, 
+                positive_text_opt=None, 
+                extra_pnginfo=None, 
+                prompt=None, 
+                safe_prompt="disable", 
+                image_preview="disable", 
+                send_notification="disable",
+                send_image="disable"
+                ):
         counter = 1
         
         
@@ -107,21 +123,28 @@ class WebhookImage:
             results.append({ 'filename': file, 'subfolder': '', 'type': self.type})
             counter += 1
             
-            try:
-                with open(image_path, 'rb') as image_file:
-                    files = {
-                        'file': ('photo', image_file, 'image/png')
-                    }
-            
-                    res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
-                    res.raise_for_status()
-                    logger.info("Image posted successfully!")
-                   
-            except OSError as e:
-                logger.error(f"An error occurred while sending: {e}")
-            else:
+            # do we send the image
+            if send_image == 'enable':
+                try:
+                    with open(image_path, 'rb') as image_file:
+                        files = {
+                            'file': ('photo', image_file, 'image/png')
+                        }
+                
+                        res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
+                        res.raise_for_status()
+                        logger.info("Image posted successfully!")
+                    
+                except OSError as e:
+                    logger.error(f"An error occurred while sending: {e}")
+                else:
+                    if send_notification == 'enable':
+                        WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
+            else:    
+                # maybe only send the message        
                 if send_notification == 'enable':
                     WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
+            
 
         if image_preview == 'disabled':
             results = list()
