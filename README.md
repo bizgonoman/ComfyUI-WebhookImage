@@ -17,10 +17,11 @@ Will be added soon
 
 1. Installing the node
 Navigate to your custom_nodes folder and execute
-
+```
 git pull https://github.com/JohanK66/ComfyUI-WebhookImage.git
-
+```
 2. Then run the requirements
+```
 pip install -r requirements.txt
-
+```
 
