@@ -93,57 +93,59 @@ class WebhookImage:
         
         
         results = list()
-        
-        for image in images:
-            i = 255. * image.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            
-            metadata = PngInfo()
-            metadata.add_text("webhook_url", webhook_url )
-            metadata.add_text("notification_text", notification_text)
-            
-            if prompt is not None:
-                if safe_prompt == 'enable':
-                    metadata.add_text("prompt", json.dumps(prompt))
-            
-            if positive_text_opt is not None:
-                metadata.add_text("positive_text_opt", json.dumps(positive_text_opt))
-            if negative_text_opt is not None:
-                metadata.add_text("negative_text_opt", json.dumps(negative_text_opt))
-            if extra_pnginfo is not None:
-                for x in extra_pnginfo:
-                    metadata.add_text(x, json.dumps(extra_pnginfo[x]))
-
-            timestamp = datetime.now().strftime('%c') 
-            file = f"telegram_notification_{counter:05}_{timestamp}.png"
-            
-            image_path = os.path.join(self.output_dir, file)
-            img.save(image_path, format="PNG", pnginfo=metadata)
-            
-            results.append({ 'filename': file, 'subfolder': '', 'type': self.type})
-            counter += 1
-            
-            # do we send the image
-            if send_image == 'enable':
-                try:
-                    with open(image_path, 'rb') as image_file:
-                        files = {
-                            'file': ('photo', image_file, 'image/png')
-                        }
+ 
+        # only save the image if we are going to send or preview is enabled
+        if send_image == 'enable' or image_preview == 'enabled':
+            for image in images:
+                i = 255. * image.cpu().numpy()
+                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 
-                        res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
-                        res.raise_for_status()
-                        logger.info("Image posted successfully!")
+                metadata = PngInfo()
+                metadata.add_text("webhook_url", webhook_url )
+                metadata.add_text("notification_text", notification_text)
+                
+                if prompt is not None:
+                    if safe_prompt == 'enable':
+                        metadata.add_text("prompt", json.dumps(prompt))
+                
+                if positive_text_opt is not None:
+                    metadata.add_text("positive_text_opt", json.dumps(positive_text_opt))
+                if negative_text_opt is not None:
+                    metadata.add_text("negative_text_opt", json.dumps(negative_text_opt))
+                if extra_pnginfo is not None:
+                    for x in extra_pnginfo:
+                        metadata.add_text(x, json.dumps(extra_pnginfo[x]))
+
+                timestamp = datetime.now().strftime('%c') 
+                file = f"telegram_notification_{counter:05}_{timestamp}.png"
+                
+                image_path = os.path.join(self.output_dir, file)
+                img.save(image_path, format="PNG", pnginfo=metadata)
+                
+                results.append({ 'filename': file, 'subfolder': '', 'type': self.type})
+                counter += 1
+                
+                # do we send the image
+                if send_image == 'enable':
+                    try:
+                        with open(image_path, 'rb') as image_file:
+                            files = {
+                                'file': ('photo', image_file, 'image/png')
+                            }
                     
-                except OSError as e:
-                    logger.error(f"An error occurred while sending: {e}")
-                else:
+                            res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
+                            res.raise_for_status()
+                            logger.info("Image posted successfully!")
+                        
+                    except OSError as e:
+                        logger.error(f"An error occurred while sending: {e}")
+                    else:
+                        if send_notification == 'enable':
+                            WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
+                else:    
+                    # maybe only send the message        
                     if send_notification == 'enable':
                         WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
-            else:    
-                # maybe only send the message        
-                if send_notification == 'enable':
-                    WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
             
 
         if image_preview == 'disabled':
