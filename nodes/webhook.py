@@ -95,7 +95,7 @@ class WebhookImage:
         results = list()
  
         # only save the image if we are going to send or preview is enabled
-        if send_image == 'enable' or image_preview == 'enabled':
+        if send_image == 'enable' 
             for image in images:
                 i = 255. * image.cpu().numpy()
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
