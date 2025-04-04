@@ -95,7 +95,7 @@ class WebhookImage:
         results = list()
  
         # only save the image if we are going to send or preview is enabled
-        if send_image == 'enable' 
+        if send_image == 'enable':
             for image in images:
                 i = 255. * image.cpu().numpy()
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -127,10 +127,12 @@ class WebhookImage:
                 
                 # do we send the image
                 if send_image == 'enable':
+		    WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
                     try:
                         with open(image_path, 'rb') as image_file:
                             files = {
-                                'file': ('photo', image_file, 'image/png')
+                                'file': ('photo', image_file, 'image/png'),
+				'notification' : notification_text
                             }
                     
                             res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
@@ -139,13 +141,11 @@ class WebhookImage:
                         
                     except OSError as e:
                         logger.error(f"An error occurred while sending: {e}")
-                    else:
-                        if send_notification == 'enable':
-                            WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
+                      
                 else:    
                     # maybe only send the message        
-                    if send_notification == 'enable':
-                        WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
+                    #if send_notification == 'enable':
+                    WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
             
 
         if image_preview == 'disabled':
