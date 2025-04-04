@@ -101,6 +101,7 @@ class WebhookImage:
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 
                 metadata = PngInfo()
+                
                 metadata.add_text("webhook_url", webhook_url )
                 metadata.add_text("notification_text", notification_text)
                 
@@ -125,14 +126,13 @@ class WebhookImage:
                 results.append({ 'filename': file, 'subfolder': '', 'type': self.type})
                 counter += 1
                 
+                WebhookImage.sendTxtMessage(webhook_url, notification_text, json_format, timeout, verify_ssl)
                 # do we send the image
                 if send_image == 'enable':
-        		    WebhookImage.sendTxtMessage(webhook_url, notification_text, json_format, timeout, verify_ssl)
                     try:
                         with open(image_path, 'rb') as image_file:
                             files = {
-                                'file': ('photo', image_file, 'image/png'),
-                				'notification' : notification_text
+                                'file': (notification_text, image_file, 'image/png'),
                             }
                     
                             res = requests.post( webhook_url, files=files, timeout=timeout, verify=verify_ssl)
@@ -150,5 +150,6 @@ class WebhookImage:
 
         if image_preview == 'disabled':
             results = list()
+            WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
             
         return { 'ui': { 'images': results } }
