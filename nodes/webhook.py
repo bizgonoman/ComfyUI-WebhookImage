@@ -127,7 +127,7 @@ class WebhookImage:
                 
                 # do we send the image
                 if send_image == 'enable':
-		    WebhookImage.sendTxtMessage(  webhook_url, notification_text, json_format, timeout, verify_ssl)
+		    WebhookImage.sendTxtMessage(webhook_url, notification_text, json_format, timeout, verify_ssl)
                     try:
                         with open(image_path, 'rb') as image_file:
                             files = {
